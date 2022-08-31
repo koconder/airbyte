@@ -100,12 +100,10 @@ import io.airbyte.api.model.generated.WorkspaceRead;
 import io.airbyte.api.model.generated.WorkspaceReadList;
 import io.airbyte.api.model.generated.WorkspaceUpdate;
 import io.airbyte.api.model.generated.WorkspaceUpdateName;
-import io.airbyte.commons.io.FileTtlManager;
 import io.airbyte.commons.version.AirbyteVersion;
 import io.airbyte.config.Configs.WorkerEnvironment;
 import io.airbyte.config.helpers.LogConfigs;
 import io.airbyte.config.persistence.ConfigNotFoundException;
-import io.airbyte.config.persistence.ConfigPersistence;
 import io.airbyte.config.persistence.ConfigRepository;
 import io.airbyte.config.persistence.SecretsRepositoryReader;
 import io.airbyte.config.persistence.SecretsRepositoryWriter;
@@ -117,7 +115,6 @@ import io.airbyte.scheduler.persistence.JobPersistence;
 import io.airbyte.scheduler.persistence.WorkspaceHelper;
 import io.airbyte.server.errors.BadObjectSchemaKnownException;
 import io.airbyte.server.errors.IdNotFoundKnownException;
-import io.airbyte.server.handlers.ArchiveHandler;
 import io.airbyte.server.handlers.AttemptHandler;
 import io.airbyte.server.handlers.ConnectionsHandler;
 import io.airbyte.server.handlers.DbMigrationHandler;
@@ -161,7 +158,6 @@ public class ConfigurationApi implements io.airbyte.api.generated.V1Api {
   private final JobHistoryHandler jobHistoryHandler;
   private final WebBackendConnectionsHandler webBackendConnectionsHandler;
   private final HealthCheckHandler healthCheckHandler;
-  private final ArchiveHandler archiveHandler;
   private final LogsHandler logsHandler;
   private final OpenApiConfigHandler openApiConfigHandler;
   private final DbMigrationHandler dbMigrationHandler;
@@ -173,11 +169,9 @@ public class ConfigurationApi implements io.airbyte.api.generated.V1Api {
 
   public ConfigurationApi(final ConfigRepository configRepository,
                           final JobPersistence jobPersistence,
-                          final ConfigPersistence seed,
                           final SecretsRepositoryReader secretsRepositoryReader,
                           final SecretsRepositoryWriter secretsRepositoryWriter,
                           final SynchronousSchedulerClient synchronousSchedulerClient,
-                          final FileTtlManager archiveTtlManager,
                           final Database configsDatabase,
                           final Database jobsDatabase,
                           final StatePersistence statePersistence,
@@ -244,16 +238,6 @@ public class ConfigurationApi implements io.airbyte.api.generated.V1Api {
         eventRunner,
         configRepository);
     healthCheckHandler = new HealthCheckHandler(configRepository);
-    archiveHandler = new ArchiveHandler(
-        airbyteVersion,
-        configRepository,
-        secretsRepositoryReader,
-        secretsRepositoryWriter,
-        jobPersistence,
-        seed,
-        workspaceHelper,
-        archiveTtlManager,
-        true);
     logsHandler = new LogsHandler();
     openApiConfigHandler = new OpenApiConfigHandler();
     dbMigrationHandler = new DbMigrationHandler(configsDatabase, configsFlyway, jobsDatabase, jobsFlyway);
@@ -851,10 +835,6 @@ public class ConfigurationApi implements io.airbyte.api.generated.V1Api {
   @Override
   public InternalOperationResult setWorkflowInAttempt(final SetWorkflowInAttemptRequestBody requestBody) {
     return execute(() -> attemptHandler.setWorkflowInAttempt(requestBody));
-  }
-
-  public boolean canImportDefinitions() {
-    return archiveHandler.canImportDefinitions();
   }
 
   private static <T> T execute(final HandlerCall<T> call) {
