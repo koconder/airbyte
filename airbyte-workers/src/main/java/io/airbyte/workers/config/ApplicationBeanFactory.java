@@ -135,7 +135,6 @@ public class ApplicationBeanFactory {
             notEquals = "DATA_PLANE")
   public JsonSecretsProcessor jsonSecretsProcessor(final FeatureFlags featureFlags) {
     return JsonSecretsProcessor.builder()
-        .maskSecrets(!featureFlags.exposeSecretsInExport())
         .copySecrets(false)
         .build();
   }
