@@ -41,7 +41,7 @@ public class SyncWorkflowImpl implements SyncWorkflow {
   @TemporalActivityStub(activityOptionsBeanName = "shortActivityOptions")
   private PersistStateActivity persistActivity;
 
-  @Trace(operationName = "workflow", resourceName = "SyncWorkflowImpl")
+  @Trace(operationName = "workflow")
   @Override
   public StandardSyncOutput run(final JobRunConfig jobRunConfig,
                                 final IntegrationLauncherConfig sourceLauncherConfig,
